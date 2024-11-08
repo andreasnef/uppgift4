@@ -32,24 +32,13 @@ struct ContentView: View {
             }.padding()
             List {
                 ForEach(items.sorted(by: { !$0.isCompleted && $1.isCompleted })) { todo in
-                    NavigationLink {
-                        VStack {
-                            Text(Self.dateFormatter.string(from: todo.created))
-                            TextField("Edit Todo", text: Binding(get: {
-                                todo.desc
-                            }, set: { newDesc in
-                                todo.desc = newDesc
-                            })).multilineTextAlignment(.center)
-                            Button(todo.isCompleted ? "X" : "O") {
-                                todo.isCompleted.toggle()
-                            }
-                        }.padding()
-                    } label: {
-                        HStack {
-                            Text(Self.dateFormatter.string(from: todo.created))
-                            Text(todo.desc)
-                            Text(todo.isCompleted ? "(done)" : "(open)")
-                        }.padding()
+                    HStack {
+                        Text(Self.dateFormatter.string(from: todo.created))
+                        Text(todo.desc)
+                        Text(todo.isCompleted ? "(done)" : "(open)")
+                    }.padding()
+                    .onTapGesture {
+                        todo.isCompleted.toggle()
                     }
                 }
                 .onDelete(perform: deleteItems)
