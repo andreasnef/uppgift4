@@ -10,16 +10,46 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @Query private var items: [Todo]
+
+    @State private var newDesc: String = ""
+    
+     // Static DateFormatter for reuse
+     private static let dateFormatter: DateFormatter = {
+         let formatter = DateFormatter()
+         formatter.dateStyle = .short
+         formatter.timeStyle = .short
+         return formatter
+     }()
 
     var body: some View {
         NavigationSplitView {
+            HStack {
+                TextField("New Todo", text: $newDesc)
+                Button(action: addItem) {
+                    Label("Add Todo", systemImage: "plus")
+                }
+            }.padding()
             List {
-                ForEach(items) { item in
+                ForEach(items.sorted(by: { !$0.isCompleted && $1.isCompleted })) { todo in
                     NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
+                        VStack {
+                            Text(Self.dateFormatter.string(from: todo.created))
+                            TextField("Edit Todo", text: Binding(get: {
+                                todo.desc
+                            }, set: { newDesc in
+                                todo.desc = newDesc
+                            })).multilineTextAlignment(.center)
+                            Button(todo.isCompleted ? "X" : "O") {
+                                todo.isCompleted.toggle()
+                            }
+                        }.padding()
                     } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+                        HStack {
+                            Text(Self.dateFormatter.string(from: todo.created))
+                            Text(todo.desc)
+                            Text(todo.isCompleted ? "(done)" : "(open)")
+                        }.padding()
                     }
                 }
                 .onDelete(perform: deleteItems)
@@ -27,11 +57,6 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
                 }
             }
         } detail: {
@@ -41,8 +66,9 @@ struct ContentView: View {
 
     private func addItem() {
         withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
+            let newTodo = Todo(desc: newDesc)
+            modelContext.insert(newTodo)
+            newDesc = ""
         }
     }
 
@@ -57,5 +83,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: Todo.self, inMemory: true)
 }
